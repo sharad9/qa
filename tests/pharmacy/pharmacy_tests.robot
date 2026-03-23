@@ -1,6 +1,7 @@
 *** Settings ***
 Library           RequestsLibrary
 Library           Collections
+Library           OperatingSystem
 Resource          ../../resources/common.resource
 Resource          ../../resources/auth.resource
 Variables         ../../resources/variables/default.yaml
@@ -46,8 +47,9 @@ Add Multiple Pharmacy Prescription Files
     [Tags]    pharmacy    regression
     [Documentation]    POST /absol/digitisation/add-multiple-files uploads prescription files (multipart).
     ${headers}=    Create Dictionary    Authorization=${USER_TOKEN}
-    ${file_content}=    Get Binary File    ${CURDIR}/test_prescription.txt
-    ${files}=    Create Dictionary    file=${file_content}
+    ${file_bytes}=    Get Binary File    ${CURDIR}/test_prescription.txt
+    ${file_tuple}=    Evaluate    ('test_prescription.txt', $file_bytes, 'text/plain')
+    ${files}=    Create Dictionary    file=${file_tuple}
     ${resp}=    POST    url=${BASE_URL_PHARMACY}/digitisation/add-multiple-files    files=${files}    headers=${headers}    expected_status=any
     Log Response    ${resp}
     Should Be True    ${resp.status_code} < 500
