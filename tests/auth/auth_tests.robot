@@ -16,7 +16,7 @@ Doctor Login Returns JWT
     ...    password=${DOCTOR_PASSWORD}
     ...    platform=WEB
     ...    v=50
-    ${resp}=    POST    ${BASE_URL}/new-auth/doctor/login    json=${body}    expected_status=any
+    ${resp}=    POST    ${BASE_URL}/new-auth/doctor/login    json=${body}    timeout=${TIMEOUT}    expected_status=any
     Log Response    ${resp}
     Verify Status Code    ${resp}    200
     Dictionary Should Contain Key    ${resp.headers}    authorization
@@ -41,6 +41,6 @@ User OTP Verify Returns Token
     Should Not Be Empty    ${token}    msg=No USER_TOKEN stored — OTP verification failed in suite setup
     Should Start With    ${token}    JWT    msg=Expected JWT token but got: ${token}
     ${headers}=    User Auth Headers
-    ${resp}=    GET    url=${BASE_URL}/labs-v2/patients    headers=${headers}    expected_status=any
+    ${resp}=    GET    url=${BASE_URL}/labs-v2/patients    headers=${headers}    timeout=${TIMEOUT}    expected_status=any
     Log Response    ${resp}
     Verify Status Code    ${resp}    200

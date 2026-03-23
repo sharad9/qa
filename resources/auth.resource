@@ -11,12 +11,12 @@ Get User Token
     ${existing}=    Get Variable Value    ${USER_TOKEN}    ${EMPTY}
     Run Keyword If    '${existing}' != '${EMPTY}'    Return From Keyword    ${existing}
     ${body}=    Create Dictionary    phone=${USER_PHONE}    countryCode=${91}    platform=WEB
-    ${resp}=    POST    ${BASE_URL}/new-auth/login-phone    json=${body}    expected_status=any
+    ${resp}=    POST    ${BASE_URL}/new-auth/login-phone    json=${body}    timeout=${TIMEOUT}    expected_status=any
     Log    Status: ${resp.status_code} Body: ${resp.text}
     Run Keyword If    ${resp.status_code} != 200
     ...    Fail    login-phone failed: ${resp.text}
     ${body2}=    Create Dictionary    phone=${USER_PHONE}    otp=${USER_OTP}    platform=WEB
-    ${resp2}=    POST    ${BASE_URL}/new-auth/otp    json=${body2}    expected_status=any
+    ${resp2}=    POST    ${BASE_URL}/new-auth/otp    json=${body2}    timeout=${TIMEOUT}    expected_status=any
     Log    Status: ${resp2.status_code} Body: ${resp2.text}
     Run Keyword If    ${resp2.status_code} != 200
     ...    Fail    otp verification failed: ${resp2.text}
@@ -30,7 +30,7 @@ Get Doctor Token
     ${existing}=    Get Variable Value    ${DOCTOR_TOKEN}    ${EMPTY}
     Run Keyword If    '${existing}' != '${EMPTY}'    Return From Keyword    ${existing}
     ${body}=    Create Dictionary    email=${DOCTOR_EMAIL}    password=${DOCTOR_PASSWORD}    platform=WEB    v=50
-    ${resp}=    POST    ${BASE_URL}/new-auth/doctor/login    json=${body}    expected_status=any
+    ${resp}=    POST    ${BASE_URL}/new-auth/doctor/login    json=${body}    timeout=${TIMEOUT}    expected_status=any
     Log    Status: ${resp.status_code} Body: ${resp.text}
     Run Keyword If    ${resp.status_code} != 200
     ...    Fail    Doctor login failed: ${resp.text}

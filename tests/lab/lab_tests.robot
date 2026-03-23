@@ -13,7 +13,7 @@ Search All Labs Returns List
     [Tags]    lab    smoke    critical
     [Documentation]    GET /labs-v2/all returns 200 and a non-empty list of labs.
     ${headers}=    User Auth Headers
-    ${resp}=    GET    url=${BASE_URL}/labs-v2/all    headers=${headers}    expected_status=any
+    ${resp}=    GET    url=${BASE_URL}/labs-v2/all    headers=${headers}    timeout=${TIMEOUT}    expected_status=any
     Log Response    ${resp}
     Verify Status Code    ${resp}    200
     Should Not Be Empty    ${resp.json()}
@@ -22,7 +22,7 @@ Get Cart Returns Cart Data
     [Tags]    lab    smoke
     [Documentation]    GET /labs-v2/cart returns 200.
     ${headers}=    User Auth Headers
-    ${resp}=    GET    url=${BASE_URL}/labs-v2/cart    headers=${headers}    expected_status=any
+    ${resp}=    GET    url=${BASE_URL}/labs-v2/cart    headers=${headers}    timeout=${TIMEOUT}    expected_status=any
     Log Response    ${resp}
     Verify Status Code    ${resp}    200
 
@@ -30,7 +30,7 @@ Get Addresses Returns List
     [Tags]    lab    smoke
     [Documentation]    GET /labs-v2/address returns 200 and saved addresses.
     ${headers}=    User Auth Headers
-    ${resp}=    GET    url=${BASE_URL}/labs-v2/address    headers=${headers}    expected_status=any
+    ${resp}=    GET    url=${BASE_URL}/labs-v2/address    headers=${headers}    timeout=${TIMEOUT}    expected_status=any
     Log Response    ${resp}
     Verify Status Code    ${resp}    200
 
@@ -40,7 +40,7 @@ Get Partners For Cart
     ${headers}=    User Auth Headers
     ${params}=    Create Dictionary    lat=28.5681199    long=77.31620029999999
     ${resp}=    GET    url=${BASE_URL}/labs-v3/cart/partners/${CART_ID}
-    ...    headers=${headers}    params=${params}    expected_status=any
+    ...    headers=${headers}    params=${params}    timeout=${TIMEOUT}    expected_status=any
     Log Response    ${resp}
     Verify Status Code    ${resp}    200
 
@@ -50,7 +50,7 @@ Get Slots For Cart
     ${headers}=    User Auth Headers
     ${params}=    Create Dictionary    cartId=${CART_ID}
     ${resp}=    GET    url=${BASE_URL}/labs-v2/slots
-    ...    headers=${headers}    params=${params}    expected_status=any
+    ...    headers=${headers}    params=${params}    timeout=${TIMEOUT}    expected_status=any
     Log Response    ${resp}
     Verify Status Code    ${resp}    200
 
@@ -58,7 +58,7 @@ Get Patients Returns List
     [Tags]    lab    regression
     [Documentation]    GET /labs-v2/patients returns the user's patient profiles.
     ${headers}=    User Auth Headers
-    ${resp}=    GET    url=${BASE_URL}/labs-v2/patients    headers=${headers}    expected_status=any
+    ${resp}=    GET    url=${BASE_URL}/labs-v2/patients    headers=${headers}    timeout=${TIMEOUT}    expected_status=any
     Log Response    ${resp}
     Verify Status Code    ${resp}    200
 
@@ -66,7 +66,7 @@ Get Cart Summary
     [Tags]    lab    regression
     [Documentation]    GET /labs-v3/cart/summary/:cartId returns order summary (200 or 400 for expired cart).
     ${headers}=    User Auth Headers
-    ${resp}=    GET    url=${BASE_URL}/labs-v3/cart/summary/${CART_ID}    headers=${headers}    expected_status=any
+    ${resp}=    GET    url=${BASE_URL}/labs-v3/cart/summary/${CART_ID}    headers=${headers}    timeout=${TIMEOUT}    expected_status=any
     Log Response    ${resp}
     Should Be True    ${resp.status_code} in [200, 400]
     ...    msg=Expected HTTP 200 or 400 but got ${resp.status_code}: ${resp.text}
@@ -77,7 +77,7 @@ Lab Dashboard Returns Data
     ${headers}=    User Auth Headers
     ${resp}=    GET
     ...    url=${BASE_URL}/labs-v2/dashboard-v4?lng=77.31620029999999&lat=28.5681199
-    ...    headers=${headers}    expected_status=any
+    ...    headers=${headers}    timeout=${TIMEOUT}    expected_status=any
     Log Response    ${resp}
     Verify Status Code    ${resp}    200
 
@@ -87,13 +87,13 @@ Add Lab To Cart And Remove
     ${headers}=    User Auth Headers
     # Add to cart
     ${body}=    Create Dictionary    cartId=${CART_ID}    labId=${LAB_ID}
-    ${resp}=    POST    url=${BASE_URL}/labs-v2/cart/add    json=${body}    headers=${headers}    expected_status=any
+    ${resp}=    POST    url=${BASE_URL}/labs-v2/cart/add    json=${body}    headers=${headers}    timeout=${TIMEOUT}    expected_status=any
     Log Response    ${resp}
     Verify Status Code    ${resp}    200
     ${cart_item_id}=    Set Variable    ${resp.json()}[cartItem][cartItemId]
     # Remove from cart
     ${body2}=    Create Dictionary    cartId=${CART_ID}    cartItemId=${cart_item_id}
-    ${resp2}=    POST    url=${BASE_URL}/labs-v2/cart/remove    json=${body2}    headers=${headers}    expected_status=any
+    ${resp2}=    POST    url=${BASE_URL}/labs-v2/cart/remove    json=${body2}    headers=${headers}    timeout=${TIMEOUT}    expected_status=any
     Log Response    ${resp2}
     Verify Status Code    ${resp2}    200
 
@@ -102,7 +102,7 @@ Select Cart Address
     [Documentation]    POST /labs-v2/cart/select-address sets delivery address on cart.
     ${headers}=    User Auth Headers
     ${body}=    Create Dictionary    cartId=${CART_ID}    addressId=${ADDRESS_ID}
-    ${resp}=    POST    url=${BASE_URL}/labs-v2/cart/select-address    json=${body}    headers=${headers}    expected_status=any
+    ${resp}=    POST    url=${BASE_URL}/labs-v2/cart/select-address    json=${body}    headers=${headers}    timeout=${TIMEOUT}    expected_status=any
     Log Response    ${resp}
     Verify Status Code    ${resp}    200
 
@@ -113,7 +113,7 @@ Select Lab Partner
     # Get partners (cart may be stale on UAT — accept 200 or 4xx)
     ${resp}=    GET
     ...    url=${BASE_URL}/labs-v3/cart/partners/${CART_ID}?lat=28.5681199&long=77.31620029999999
-    ...    headers=${headers}    expected_status=any
+    ...    headers=${headers}    timeout=${TIMEOUT}    expected_status=any
     Log Response    ${resp}
     Should Be True    ${resp.status_code} < 500
     ...    msg=Get partners returned server error: ${resp.status_code}
@@ -121,7 +121,7 @@ Select Lab Partner
     ${meta}=    Set Variable    ${resp.json()}[networkList][0][meta]
     # Select partner
     ${body}=    Create Dictionary    meta=${meta}
-    ${resp2}=    POST    url=${BASE_URL}/labs-v2/cart/select-partner    json=${body}    headers=${headers}    expected_status=any
+    ${resp2}=    POST    url=${BASE_URL}/labs-v2/cart/select-partner    json=${body}    headers=${headers}    timeout=${TIMEOUT}    expected_status=any
     Log Response    ${resp2}
     Should Be True    ${resp2.status_code} < 500
     ...    msg=Select partner returned server error: ${resp2.status_code}
@@ -132,7 +132,7 @@ Select Lab Slot
     ${headers}=    User Auth Headers
     ${date}=    Evaluate    (__import__('datetime').date.today() + __import__('datetime').timedelta(days=1)).strftime('%Y-%m-%d')
     ${body}=    Create Dictionary    date=${date}    slotId=${SLOT_ID}    cartId=${CART_ID}
-    ${resp}=    POST    url=${BASE_URL}/labs-v2/cart/select-slot    json=${body}    headers=${headers}    expected_status=any
+    ${resp}=    POST    url=${BASE_URL}/labs-v2/cart/select-slot    json=${body}    headers=${headers}    timeout=${TIMEOUT}    expected_status=any
     Log Response    ${resp}
     Should Be True    ${resp.status_code} < 500
     ...    msg=Select slot returned server error: ${resp.status_code}
@@ -142,7 +142,7 @@ Select Lab Patient
     [Documentation]    POST /labs-v2/cart/select-patient assigns patient to cart.
     ${headers}=    User Auth Headers
     ${body}=    Create Dictionary    cartId=${CART_ID}    patientId=${PATIENT_ID}
-    ${resp}=    POST    url=${BASE_URL}/labs-v2/cart/select-patient    json=${body}    headers=${headers}    expected_status=any
+    ${resp}=    POST    url=${BASE_URL}/labs-v2/cart/select-patient    json=${body}    headers=${headers}    timeout=${TIMEOUT}    expected_status=any
     Log Response    ${resp}
     Verify Status Code    ${resp}    200
 
@@ -154,7 +154,7 @@ Initiate Lab Transaction
     ${token}=    Set Variable    ${USER_TOKEN}
     ${resp}=    GET
     ...    url=${BASE_URL}/labs-v2/transact?amount=146&auth=${token}&cartId=${CART_ID}
-    ...    headers=${headers}    expected_status=any
+    ...    headers=${headers}    timeout=${TIMEOUT}    expected_status=any
     Log Response    ${resp}
     Should Not Be Equal As Integers    ${resp.status_code}    0
     ...    msg=Transact endpoint unreachable (no response)
@@ -166,7 +166,7 @@ Upload Lab Prescription File
     ${file_bytes}=    Get Binary File    ${CURDIR}/test_prescription.jpg
     ${file_tuple}=    Evaluate    ('test_prescription.jpg', $file_bytes, 'image/jpeg')
     ${files}=    Create Dictionary    file=${file_tuple}
-    ${resp}=    POST    url=${BASE_URL}/labs/prescriptions/file    files=${files}    headers=${headers}    expected_status=any
+    ${resp}=    POST    url=${BASE_URL}/labs/prescriptions/file    files=${files}    headers=${headers}    timeout=${TIMEOUT}    expected_status=any
     Log Response    ${resp}
     Should Be True    ${resp.status_code} < 500
     ...    msg=Prescription upload returned error: ${resp.status_code}
@@ -176,7 +176,7 @@ Submit Digitisation Request
     [Documentation]    POST /labs-v2/digitisation/submit-request links prescription to address.
     ${headers}=    User Auth Headers
     ${body}=    Create Dictionary    prescriptionId=11446    addressId=${ADDRESS_ID}
-    ${resp}=    POST    url=${BASE_URL}/labs-v2/digitisation/submit-request    json=${body}    headers=${headers}    expected_status=any
+    ${resp}=    POST    url=${BASE_URL}/labs-v2/digitisation/submit-request    json=${body}    headers=${headers}    timeout=${TIMEOUT}    expected_status=any
     Log Response    ${resp}
     Should Be True    ${resp.status_code} < 500
     ...    msg=Submit digitisation returned error: ${resp.status_code}
@@ -193,7 +193,7 @@ Mark Digitisation Complete
     ...    doctorName=Dr. S. Manoharan
     ...    centerName=S. V. Clinic
     ...    centerAddress=85 S.V.S.G Cottage 5th Main Road, Chennai
-    ${resp}=    POST    url=${BASE_URL}/digitisations/requests/mark-digitised?v=50    json=${body}    headers=${headers}    expected_status=any
+    ${resp}=    POST    url=${BASE_URL}/digitisations/requests/mark-digitised?v=50    json=${body}    headers=${headers}    timeout=${TIMEOUT}    expected_status=any
     Log Response    ${resp}
     Should Be True    ${resp.status_code} < 500
     ...    msg=Mark digitised returned error: ${resp.status_code}
