@@ -1,0 +1,203 @@
+name: QA Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ── Domain test jobs (run in parallel) ──────────────────────────────────────
+
+  test-auth:
+    name: Auth Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run auth tests
+        env:
+          TCMS_API_URL: ${{ secrets.TCMS_API_URL }}
+          TCMS_USERNAME: ${{ secrets.TCMS_USERNAME }}
+          TCMS_PASSWORD: ${{ secrets.TCMS_PASSWORD }}
+          TCMS_PRODUCT: Bookstore
+          TCMS_PRODUCT_VERSION: v1
+          TCMS_BUILD: ${{ github.sha }}
+          TCMS_PLAN_NAME: Regression
+        run: |
+          robot \
+            --listener allure_robotframework \
+            --listener kiwitcms_robotframework.Listener \
+            --outputdir results/allure-results-auth \
+            --log NONE --report NONE \
+            tests/auth/ || true
+
+      - name: Upload Allure results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: allure-results-auth
+          path: results/allure-results-auth/
+          retention-days: 7
+
+  test-books:
+    name: Books Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run books tests
+        env:
+          TCMS_API_URL: ${{ secrets.TCMS_API_URL }}
+          TCMS_USERNAME: ${{ secrets.TCMS_USERNAME }}
+          TCMS_PASSWORD: ${{ secrets.TCMS_PASSWORD }}
+          TCMS_PRODUCT: Bookstore
+          TCMS_PRODUCT_VERSION: v1
+          TCMS_BUILD: ${{ github.sha }}
+          TCMS_PLAN_NAME: Regression
+        run: |
+          robot \
+            --listener allure_robotframework \
+            --listener kiwitcms_robotframework.Listener \
+            --outputdir results/allure-results-books \
+            --log NONE --report NONE \
+            tests/books/ || true
+
+      - name: Upload Allure results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: allure-results-books
+          path: results/allure-results-books/
+          retention-days: 7
+
+  test-orders:
+    name: Orders Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run orders tests
+        env:
+          TCMS_API_URL: ${{ secrets.TCMS_API_URL }}
+          TCMS_USERNAME: ${{ secrets.TCMS_USERNAME }}
+          TCMS_PASSWORD: ${{ secrets.TCMS_PASSWORD }}
+          TCMS_PRODUCT: Bookstore
+          TCMS_PRODUCT_VERSION: v1
+          TCMS_BUILD: ${{ github.sha }}
+          TCMS_PLAN_NAME: Regression
+        run: |
+          robot \
+            --listener allure_robotframework \
+            --listener kiwitcms_robotframework.Listener \
+            --outputdir results/allure-results-orders \
+            --log NONE --report NONE \
+            tests/orders/ || true
+
+      - name: Upload Allure results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: allure-results-orders
+          path: results/allure-results-orders/
+          retention-days: 7
+
+  # ── Publish Allure report to GitHub Pages ───────────────────────────────────
+
+  publish-report:
+    name: Publish Allure Report
+    runs-on: ubuntu-latest
+    needs: [test-auth, test-books, test-orders]
+    if: always()
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Allure CLI
+        run: |
+          curl -o allure.tgz -sSL \
+            https://github.com/allure-framework/allure2/releases/download/2.27.0/allure-2.27.0.tgz
+          tar -xzf allure.tgz -C /opt
+          ln -s /opt/allure-2.27.0/bin/allure /usr/local/bin/allure
+
+      - name: Download auth results
+        uses: actions/download-artifact@v4
+        with:
+          name: allure-results-auth
+          path: downloaded/allure-results-auth/
+        continue-on-error: true
+
+      - name: Download books results
+        uses: actions/download-artifact@v4
+        with:
+          name: allure-results-books
+          path: downloaded/allure-results-books/
+        continue-on-error: true
+
+      - name: Download orders results
+        uses: actions/download-artifact@v4
+        with:
+          name: allure-results-orders
+          path: downloaded/allure-results-orders/
+        continue-on-error: true
+
+      - name: Merge Allure results
+        run: |
+          mkdir -p merged-allure-results
+          find downloaded/ -name "*.json" -exec cp {} merged-allure-results/ \;
+          find downloaded/ -name "*.xml"  -exec cp {} merged-allure-results/ \;
+          echo "Merged $(ls merged-allure-results/ | wc -l) result files"
+
+      - name: Restore Allure history from gh-pages
+        run: |
+          git fetch origin gh-pages 2>/dev/null || echo "gh-pages branch not found — skipping history restore"
+          if git show-ref --quiet refs/remotes/origin/gh-pages; then
+            git checkout origin/gh-pages -- allure-report/history 2>/dev/null || true
+            if [ -d "allure-report/history" ]; then
+              cp -r allure-report/history merged-allure-results/history
+              echo "History restored"
+            else
+              echo "No history found in gh-pages — first run"
+            fi
+          fi
+
+      - name: Generate Allure HTML report
+        run: |
+          allure generate merged-allure-results/ -o allure-report/ --clean
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: allure-report/
+          destination_dir: .
+          keep_files: false
