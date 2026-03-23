@@ -1,4 +1,4 @@
-name: QA Pipeline
+name: Visit Health QA Pipeline
 
 on:
   push:
@@ -29,7 +29,7 @@ jobs:
           TCMS_API_URL: ${{ secrets.TCMS_API_URL }}
           TCMS_USERNAME: ${{ secrets.TCMS_USERNAME }}
           TCMS_PASSWORD: ${{ secrets.TCMS_PASSWORD }}
-          TCMS_PRODUCT: Bookstore
+          TCMS_PRODUCT: VisitHealth
           TCMS_PRODUCT_VERSION: v1
           TCMS_BUILD: ${{ github.sha }}
           TCMS_PLAN_NAME: Regression
@@ -49,8 +49,8 @@ jobs:
           path: results/allure-results-auth/
           retention-days: 7
 
-  test-books:
-    name: Books Tests
+  test-lab:
+    name: Lab Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -64,12 +64,12 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Run books tests
+      - name: Run lab tests
         env:
           TCMS_API_URL: ${{ secrets.TCMS_API_URL }}
           TCMS_USERNAME: ${{ secrets.TCMS_USERNAME }}
           TCMS_PASSWORD: ${{ secrets.TCMS_PASSWORD }}
-          TCMS_PRODUCT: Bookstore
+          TCMS_PRODUCT: VisitHealth
           TCMS_PRODUCT_VERSION: v1
           TCMS_BUILD: ${{ github.sha }}
           TCMS_PLAN_NAME: Regression
@@ -77,20 +77,20 @@ jobs:
           robot \
             --listener allure_robotframework \
             --listener kiwitcms_robotframework.Listener \
-            --outputdir results/allure-results-books \
+            --outputdir results/allure-results-lab \
             --log NONE --report NONE \
-            tests/books/ || true
+            tests/lab/ || true
 
       - name: Upload Allure results
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: allure-results-books
-          path: results/allure-results-books/
+          name: allure-results-lab
+          path: results/allure-results-lab/
           retention-days: 7
 
-  test-orders:
-    name: Orders Tests
+  test-pharmacy:
+    name: Pharmacy Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -104,12 +104,12 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Run orders tests
+      - name: Run pharmacy tests
         env:
           TCMS_API_URL: ${{ secrets.TCMS_API_URL }}
           TCMS_USERNAME: ${{ secrets.TCMS_USERNAME }}
           TCMS_PASSWORD: ${{ secrets.TCMS_PASSWORD }}
-          TCMS_PRODUCT: Bookstore
+          TCMS_PRODUCT: VisitHealth
           TCMS_PRODUCT_VERSION: v1
           TCMS_BUILD: ${{ github.sha }}
           TCMS_PLAN_NAME: Regression
@@ -117,16 +117,16 @@ jobs:
           robot \
             --listener allure_robotframework \
             --listener kiwitcms_robotframework.Listener \
-            --outputdir results/allure-results-orders \
+            --outputdir results/allure-results-pharmacy \
             --log NONE --report NONE \
-            tests/orders/ || true
+            tests/pharmacy/ || true
 
       - name: Upload Allure results
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: allure-results-orders
-          path: results/allure-results-orders/
+          name: allure-results-pharmacy
+          path: results/allure-results-pharmacy/
           retention-days: 7
 
   # ── Publish Allure report to GitHub Pages ───────────────────────────────────
@@ -134,7 +134,7 @@ jobs:
   publish-report:
     name: Publish Allure Report
     runs-on: ubuntu-latest
-    needs: [test-auth, test-books, test-orders]
+    needs: [test-auth, test-lab, test-pharmacy]
     if: always()
     permissions:
       contents: write
@@ -156,18 +156,18 @@ jobs:
           path: downloaded/allure-results-auth/
         continue-on-error: true
 
-      - name: Download books results
+      - name: Download lab results
         uses: actions/download-artifact@v4
         with:
-          name: allure-results-books
-          path: downloaded/allure-results-books/
+          name: allure-results-lab
+          path: downloaded/allure-results-lab/
         continue-on-error: true
 
-      - name: Download orders results
+      - name: Download pharmacy results
         uses: actions/download-artifact@v4
         with:
-          name: allure-results-orders
-          path: downloaded/allure-results-orders/
+          name: allure-results-pharmacy
+          path: downloaded/allure-results-pharmacy/
         continue-on-error: true
 
       - name: Merge Allure results
