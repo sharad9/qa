@@ -1,0 +1,7 @@
+results/
+.env
+__pycache__/
+*.pyc
+*.egg-info/
+.allure/
+merged-allure-results/

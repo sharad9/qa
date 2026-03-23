@@ -1,0 +1,5 @@
+robotframework==6.1.1
+robotframework-requests>=0.9
+kiwitcms-robotframework-plugin>=12.0
+allure-robotframework>=2.13
+PyYAML>=6.0
