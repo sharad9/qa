@@ -9,26 +9,24 @@ endif
 # Run all tests with Allure listener (no TCMS listener required locally)
 test:
 	robot \
-	  --listener allure_robotframework \
-	  --outputdir results/allure-results \
+	  --listener allure_robotframework:results/allure-results \
+	  --outputdir results/robot-output \
 	  tests/
 
-# Run specific suite: make test-books, make test-auth, make test-orders
+# Run specific suite: make test-lab, make test-auth, make test-pharmacy
 # Adds TCMS listener automatically if TCMS_API_URL is set in .env
 test-%:
 	robot \
-	  --listener allure_robotframework \
+	  --listener allure_robotframework:results/allure-results-$* \
 	  $(if $(TCMS_API_URL),--listener kiwitcms_robotframework.Listener,) \
-	  --outputdir results/allure-results-$* \
+	  --outputdir results/robot-output-$* \
 	  tests/$*/
 
-# Generate Allure HTML report — merges all allure-results-* dirs
+# Generate Allure HTML report from latest results
 report:
-	mkdir -p merged-allure-results
-	find results/ -name "*.json" -exec cp {} merged-allure-results/ \;
-	find results/ -name "*.xml"  -exec cp {} merged-allure-results/ \;
-	allure generate merged-allure-results/ -o results/allure-report --clean
-	@echo "Report ready: results/allure-report/index.html"
+	allure generate results/allure-results -o results/allure-report --clean
+	@echo "Report ready — serve with:"
+	@echo "  python3 -m http.server 8888 --directory results/allure-report"
 
 # Start Kiwi TCMS via Docker Compose
 kiwi-up:
