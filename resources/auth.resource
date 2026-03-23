@@ -1,35 +1,51 @@
 *** Settings ***
 Library    RequestsLibrary
 Library    Collections
+Library    BuiltIn
 Variables  variables/default.yaml
 
-*** Variables ***
-${ACCESS_TOKEN}    ${EMPTY}
-
 *** Keywords ***
-Register API Client
-    [Documentation]    Register a new API client.
-    ...                The Simple Books API requires unique email per client.
-    ${body}=    Create Dictionary
-    ...    clientName=${CLIENT_NAME}
-    ...    clientEmail=${CLIENT_EMAIL}
-    ${resp}=    POST    ${BASE_URL}/api-clients/    json=${body}    expected_status=any
-    Log    Status: ${resp.status_code}
-    Log    Body: ${resp.text}
-    # 409 = client already exists — that's fine
-    Run Keyword Unless    ${resp.status_code} in [201, 409]
-    ...    Fail    Client registration failed: ${resp.text}
-
-Get Access Token
-    [Documentation]    Register client and obtain a Bearer access token.
-    ...                On first call returns 201 + accessToken. On duplicate email returns 409.
-    ...                Use a timestamp-suffixed CLIENT_EMAIL to ensure fresh token every run.
-    ${body}=    Create Dictionary    clientName=${CLIENT_NAME}    clientEmail=${CLIENT_EMAIL}
-    ${resp}=    POST    ${BASE_URL}/api-clients/    json=${body}    expected_status=any
-    Log    Status: ${resp.status_code}
-    Log    Body: ${resp.text}
-    Run Keyword If    ${resp.status_code} != 201
-    ...    Fail    Expected 201 from /api-clients/ but got ${resp.status_code}. Use a unique CLIENT_EMAIL.
-    ${token}=    Set Variable    ${resp.json()}[accessToken]
-    Set Suite Variable    ${ACCESS_TOKEN}    ${token}
+Get User Token
+    [Documentation]    Login via phone + OTP and return JWT token.
+    ...                If USER_TOKEN is already set globally (from a previous suite), reuse it.
+    ${existing}=    Get Variable Value    ${USER_TOKEN}    ${EMPTY}
+    Run Keyword If    '${existing}' != '${EMPTY}'    Return From Keyword    ${existing}
+    ${body}=    Create Dictionary    phone=${USER_PHONE}    countryCode=${91}    platform=WEB
+    ${resp}=    POST    ${BASE_URL}/new-auth/login-phone    json=${body}    expected_status=any
+    Log    Status: ${resp.status_code} Body: ${resp.text}
+    Run Keyword If    ${resp.status_code} != 200
+    ...    Fail    login-phone failed: ${resp.text}
+    ${body2}=    Create Dictionary    phone=${USER_PHONE}    otp=${USER_OTP}    platform=WEB
+    ${resp2}=    POST    ${BASE_URL}/new-auth/otp    json=${body2}    expected_status=any
+    Log    Status: ${resp2.status_code} Body: ${resp2.text}
+    Run Keyword If    ${resp2.status_code} != 200
+    ...    Fail    otp verification failed: ${resp2.text}
+    ${token}=    Set Variable    ${resp2.headers}[authorization]
+    Set Global Variable    ${USER_TOKEN}    ${token}
     [Return]    ${token}
+
+Get Doctor Token
+    [Documentation]    Login as doctor and return JWT token.
+    ...                If DOCTOR_TOKEN is already set globally (from a previous suite), reuse it.
+    ${existing}=    Get Variable Value    ${DOCTOR_TOKEN}    ${EMPTY}
+    Run Keyword If    '${existing}' != '${EMPTY}'    Return From Keyword    ${existing}
+    ${body}=    Create Dictionary    email=${DOCTOR_EMAIL}    password=${DOCTOR_PASSWORD}    platform=WEB    v=50
+    ${resp}=    POST    ${BASE_URL}/new-auth/doctor/login    json=${body}    expected_status=any
+    Log    Status: ${resp.status_code} Body: ${resp.text}
+    Run Keyword If    ${resp.status_code} != 200
+    ...    Fail    Doctor login failed: ${resp.text}
+    ${token}=    Set Variable    ${resp.headers}[authorization]
+    Set Global Variable    ${DOCTOR_TOKEN}    ${token}
+    [Return]    ${token}
+
+User Auth Headers
+    [Documentation]    Return Authorization header dict for user token.
+    ${token}=    Get Variable Value    ${USER_TOKEN}    ${EMPTY}
+    ${headers}=    Create Dictionary    Authorization=${token}    Content-Type=application/json
+    [Return]    ${headers}
+
+Doctor Auth Headers
+    [Documentation]    Return Authorization header dict for doctor token.
+    ${token}=    Get Variable Value    ${DOCTOR_TOKEN}    ${EMPTY}
+    ${headers}=    Create Dictionary    Authorization=${token}    Content-Type=application/json
+    [Return]    ${headers}

@@ -1,4 +1,19 @@
-BASE_URL: https://simple-books-api.click
+# Visit Health UAT
+BASE_URL: https://api.samuraijack.xyz/latios
+BASE_URL_PHARMACY: https://api.getvisitapp.net/absol
 TIMEOUT: 10
-CLIENT_NAME: BookstoreQA
-CLIENT_EMAIL: qa@bookstore-sample.test
+
+# Doctor credentials
+DOCTOR_EMAIL: doc@doc.com
+DOCTOR_PASSWORD: jasper@doctor
+
+# User credentials (OTP auth)
+USER_PHONE: "9136186721"
+USER_OTP: "1234"
+
+# Fixed test data (UAT seed data)
+CART_ID: "33316"
+ADDRESS_ID: "5813"
+PATIENT_ID: "1441"
+LAB_ID: "12"
+SLOT_ID: "1"

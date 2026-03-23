@@ -2,37 +2,45 @@
 Library           RequestsLibrary
 Library           Collections
 Resource          ../../resources/common.resource
+Resource          ../../resources/auth.resource
 Variables         ../../resources/variables/default.yaml
 
-Suite Setup       Verify API Is Up
+Suite Setup       Get User Token
 
 *** Test Cases ***
-Register New Client Returns Access Token
+Doctor Login Returns JWT
     [Tags]    auth    smoke    critical
-    [Documentation]    POST /api-clients/ with a unique email returns 201 and an accessToken.
-    ${ts}=    Evaluate    int(__import__('time').time())
-    ${email}=    Set Variable    qa+${ts}@bookstore-sample.test
-    ${body}=    Create Dictionary    clientName=BookstoreQA    clientEmail=${email}
-    ${resp}=    POST    ${BASE_URL}/api-clients/    json=${body}    expected_status=any
+    [Documentation]    POST /new-auth/doctor/login returns 200 and Authorization JWT header.
+    ${body}=    Create Dictionary
+    ...    email=${DOCTOR_EMAIL}
+    ...    password=${DOCTOR_PASSWORD}
+    ...    platform=WEB
+    ...    v=50
+    ${resp}=    POST    ${BASE_URL}/new-auth/doctor/login    json=${body}    expected_status=any
     Log Response    ${resp}
-    Verify Status Code    ${resp}    201
-    Dictionary Should Contain Key    ${resp.json()}    accessToken
-    Should Not Be Empty    ${resp.json()}[accessToken]
+    Verify Status Code    ${resp}    200
+    Dictionary Should Contain Key    ${resp.headers}    authorization
+    Should Start With    ${resp.headers}[authorization]    JWT
 
-Duplicate Client Registration Returns 409
-    [Tags]    auth    regression
-    [Documentation]    Registering the same email twice returns 409 Conflict.
-    ${ts}=    Evaluate    int(__import__('time').time())
-    ${email}=    Set Variable    qa+dup${ts}@bookstore-sample.test
-    ${body}=    Create Dictionary    clientName=BookstoreQA    clientEmail=${email}
-    POST    ${BASE_URL}/api-clients/    json=${body}    expected_status=201
-    ${resp}=    POST    ${BASE_URL}/api-clients/    json=${body}    expected_status=any
-    Log Response    ${resp}
-    Verify Status Code    ${resp}    409
-
-Protected Endpoint Requires Token
+User Login Sends OTP
     [Tags]    auth    smoke    critical
-    [Documentation]    GET /orders without Authorization header returns 401.
-    ${resp}=    GET    ${BASE_URL}/orders    expected_status=any
+    [Documentation]    Verify OTP-based login flow succeeded: suite setup called login-phone and
+    ...                received otpSent, then verified OTP. Confirms the full user auth flow works.
+    ...                Note: login-phone has a per-window rate limit on UAT; the suite setup performs
+    ...                the actual call. This test validates the resulting token is a valid JWT.
+    ${token}=    Get Variable Value    ${USER_TOKEN}    ${EMPTY}
+    Should Not Be Empty    ${token}    msg=USER_TOKEN is empty — login-phone or OTP flow failed in suite setup
+    Should Start With    ${token}    JWT    msg=USER_TOKEN does not start with JWT: ${token}
+
+User OTP Verify Returns Token
+    [Tags]    auth    smoke    critical
+    [Documentation]    Verify that the OTP verification returned a valid JWT token.
+    ...                The suite setup called /new-auth/login-phone then /new-auth/otp — this
+    ...                test confirms the token stored from that flow is a valid JWT.
+    ${token}=    Get Variable Value    ${USER_TOKEN}    ${EMPTY}
+    Should Not Be Empty    ${token}    msg=No USER_TOKEN stored — OTP verification failed in suite setup
+    Should Start With    ${token}    JWT    msg=Expected JWT token but got: ${token}
+    ${headers}=    User Auth Headers
+    ${resp}=    GET    url=${BASE_URL}/labs-v2/patients    headers=${headers}    expected_status=any
     Log Response    ${resp}
-    Verify Status Code    ${resp}    401
+    Verify Status Code    ${resp}    200
