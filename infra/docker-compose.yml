@@ -1,0 +1,40 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:15
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: kiwi
+      POSTGRES_USER: kiwi
+      POSTGRES_PASSWORD: kiwi_secret
+    volumes:
+      - kiwi_db_data:/var/lib/postgresql/data
+
+  kiwi:
+    image: kiwitcms/kiwi:latest
+    restart: unless-stopped
+    depends_on:
+      - db
+    environment:
+      KIWI_DB_HOST: db
+      KIWI_DB_PORT: 5432
+      KIWI_DB_NAME: kiwi
+      KIWI_DB_USER: kiwi
+      KIWI_DB_PASSWORD: kiwi_secret
+    volumes:
+      - kiwi_uploads:/Kiwi/uploads
+
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    depends_on:
+      - kiwi
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+
+volumes:
+  kiwi_db_data:
+  kiwi_uploads:
