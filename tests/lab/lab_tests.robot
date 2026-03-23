@@ -161,10 +161,10 @@ Initiate Lab Transaction
 
 Upload Lab Prescription File
     [Tags]    lab    regression
-    [Documentation]    POST /labs/prescriptions/file uploads a prescription (multipart).
+    [Documentation]    POST /labs/prescriptions/file uploads a prescription image (multipart/form-data).
     ${headers}=    Create Dictionary    Authorization=${USER_TOKEN}
-    ${file_bytes}=    Get Binary File    ${CURDIR}/test_prescription.txt
-    ${file_tuple}=    Evaluate    ('test_prescription.txt', $file_bytes, 'text/plain')
+    ${file_bytes}=    Get Binary File    ${CURDIR}/test_prescription.jpg
+    ${file_tuple}=    Evaluate    ('test_prescription.jpg', $file_bytes, 'image/jpeg')
     ${files}=    Create Dictionary    file=${file_tuple}
     ${resp}=    POST    url=${BASE_URL}/labs/prescriptions/file    files=${files}    headers=${headers}    expected_status=any
     Log Response    ${resp}
