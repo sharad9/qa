@@ -1,4 +1,4 @@
-BASE_URL: https://simple-books-api.glitch.me
+BASE_URL: https://simple-books-api.click
 TIMEOUT: 10
 CLIENT_NAME: BookstoreQA
 CLIENT_EMAIL: qa@bookstore-sample.test
