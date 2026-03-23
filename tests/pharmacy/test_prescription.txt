@@ -1,0 +1,3 @@
+Test prescription for QA automation
+Patient: QA Tester
+Date: 2026-03-23
