@@ -1,6 +1,4 @@
-# Default variables — points to UAT
-# Override by passing -V resources/variables/local.yaml etc.
-# Or use: make test ENV=local | ENV=uat | ENV=prod
+# Visit Health — UAT Environment
 BASE_URL: https://api.samuraijack.xyz/latios
 BASE_URL_PHARMACY: https://api.getvisitapp.net/absol
 TIMEOUT: 10

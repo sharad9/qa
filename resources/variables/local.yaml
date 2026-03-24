@@ -1,8 +1,6 @@
-# Default variables — points to UAT
-# Override by passing -V resources/variables/local.yaml etc.
-# Or use: make test ENV=local | ENV=uat | ENV=prod
-BASE_URL: https://api.samuraijack.xyz/latios
-BASE_URL_PHARMACY: https://api.getvisitapp.net/absol
+# Visit Health — Local / Dev Environment
+BASE_URL: http://127.0.0.1:5001
+BASE_URL_PHARMACY: http://127.0.0.1:2020
 TIMEOUT: 10
 
 # Doctor credentials
@@ -34,7 +32,7 @@ PHARMACY_PLACE_ORDER_STORE_ID: "11488"
 PHARMACY_PLACE_ORDER_DELIVERY_TYPE: home-delivery
 PHARMACY_PLACE_ORDER_AMOUNT: ""
 
-# Fixed test data (UAT seed data)
+# Fixed test data (local seed data — update after seeding local DB)
 CART_ID: "33316"
 ADDRESS_ID: "5813"
 PATIENT_ID: "1441"

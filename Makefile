@@ -6,18 +6,24 @@ ifneq (,$(wildcard .env))
   export
 endif
 
+# Environment: local | uat | prod  (default: uat)
+ENV ?= uat
+VARS_FILE = resources/variables/$(ENV).yaml
+
 # Run all tests with Allure listener (no TCMS listener required locally)
 test:
 	robot \
 	  --listener allure_robotframework:results/allure-results \
+	  --variablefile $(VARS_FILE) \
 	  --outputdir results/robot-output \
 	  tests/
 
-# Run specific suite: make test-lab, make test-auth, make test-pharmacy
+# Run specific suite: make test-lab ENV=uat, make test-auth ENV=local, etc.
 # Adds TCMS listener automatically if TCMS_API_URL is set in .env
 test-%:
 	robot \
 	  --listener allure_robotframework:results/allure-results-$* \
+	  --variablefile $(VARS_FILE) \
 	  $(if $(TCMS_API_URL),--listener kiwitcms_robotframework.Listener,) \
 	  --outputdir results/robot-output-$* \
 	  tests/$*/

@@ -1,22 +1,21 @@
-# Default variables — points to UAT
-# Override by passing -V resources/variables/local.yaml etc.
-# Or use: make test ENV=local | ENV=uat | ENV=prod
-BASE_URL: https://api.samuraijack.xyz/latios
-BASE_URL_PHARMACY: https://api.getvisitapp.net/absol
-TIMEOUT: 10
+# Visit Health — Production Environment
+# WARNING: Use a dedicated read-only test account. Never use real patient credentials.
+BASE_URL: https://api.visithealth.ai/latios
+BASE_URL_PHARMACY: https://api.visithealth.ai/absol
+TIMEOUT: 15
 
-# Doctor credentials
-DOCTOR_EMAIL: doc@doc.com
-DOCTOR_PASSWORD: jasper@doctor
+# Doctor credentials (prod test account)
+DOCTOR_EMAIL: ""
+DOCTOR_PASSWORD: ""
 DOCTOR_PLATFORM: WEB
 
-# User credentials (OTP auth)
-USER_PHONE: "9136186721"
-USER_OTP: "1234"
+# User credentials (prod test account — OTP auth)
+USER_PHONE: ""
+USER_OTP: ""
 USER_COUNTRY_CODE: "91"
 USER_PLATFORM: WEB
-USER_NAME: UAT User
-USER_EMAIL: uatuser@example.com
+USER_NAME: Prod Test User
+USER_EMAIL: ""
 USER_APP_VERSION: "161"
 USER_LATITUDE: "28.5681199"
 USER_LONGITUDE: "77.31620029999999"
@@ -30,16 +29,16 @@ PHARMACY_DASHBOARD_VERSION: "1800009616"
 PHARMACY_ENTITY_ID: "10"
 PHARMACY_PATIENT_ID: ""
 PHARMACY_IS_REORDER_CART: "0"
-PHARMACY_PLACE_ORDER_STORE_ID: "11488"
+PHARMACY_PLACE_ORDER_STORE_ID: ""
 PHARMACY_PLACE_ORDER_DELIVERY_TYPE: home-delivery
 PHARMACY_PLACE_ORDER_AMOUNT: ""
 
-# Fixed test data (UAT seed data)
-CART_ID: "33316"
-ADDRESS_ID: "5813"
-PATIENT_ID: "1441"
-LAB_ID: "12"
-SLOT_ID: "1"
+# Fixed test data (prod seed data — update with prod IDs)
+CART_ID: ""
+ADDRESS_ID: ""
+PATIENT_ID: ""
+LAB_ID: ""
+SLOT_ID: ""
 
 # Digitisation payload
 DIGITISATION_VERSION: "50"
