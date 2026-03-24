@@ -13,7 +13,7 @@ Suite Setup       Get User Token
 
 # ── Step 1 ────────────────────────────────────────────────────────────────────
 Add Multiple Prescription Files
-    [Tags]    pharmacy    journey    smoke    critical
+    [Tags]    journey
     [Documentation]    POST /absol/digitisation/add-multiple-files — uploads prescription
     ...    image (multipart), extracts pharmacyPrescriptionId.
     ${upload_headers}=    Create Dictionary    Authorization=${USER_TOKEN}
@@ -32,7 +32,7 @@ Add Multiple Prescription Files
 
 # ── Step 2 ────────────────────────────────────────────────────────────────────
 Get Upload Prescription Page
-    [Tags]    pharmacy    journey    smoke
+    [Tags]    journey
     [Documentation]    GET /absol/digitisation/upload-prescription — returns prescription
     ...    preview and pharmacyPrescriptionId confirming successful upload.
     ${headers}=    User Auth Headers
@@ -45,7 +45,7 @@ Get Upload Prescription Page
 
 # ── Step 3 ────────────────────────────────────────────────────────────────────
 Get Cart Addresses
-    [Tags]    pharmacy    journey    smoke
+    [Tags]    journey
     [Documentation]    GET /absol/cart/addresses — retrieves saved delivery addresses.
     ${headers}=    User Auth Headers
     ${resp}=    GET    url=${BASE_URL_PHARMACY}/cart/addresses
@@ -57,7 +57,7 @@ Get Cart Addresses
 
 # ── Step 4 ────────────────────────────────────────────────────────────────────
 Get Patients
-    [Tags]    pharmacy    journey    smoke
+    [Tags]    journey
     [Documentation]    GET /latios/labs-v2/patients — retrieves patient profiles.
     ${headers}=    User Auth Headers
     ${resp}=    GET    url=${BASE_URL}/labs-v2/patients
@@ -69,7 +69,7 @@ Get Patients
 
 # ── Step 5 ────────────────────────────────────────────────────────────────────
 Submit Prescription Request
-    [Tags]    pharmacy    journey    smoke
+    [Tags]    journey
     [Documentation]    POST /absol/digitisation/submit-request — links prescription,
     ...    address and patient; creates digitisation request and extracts digitisationId.
     ${headers}=    User Auth Headers
@@ -89,7 +89,7 @@ Submit Prescription Request
 
 # ── Step 6 ────────────────────────────────────────────────────────────────────
 Save Cart Items
-    [Tags]    pharmacy    journey    regression
+    [Tags]    journey
     [Documentation]    PUT /absol/medicines/save/cartItems?v=50 — saves prescribed medicine
     ...    to cart using digitisationId from submit-request.
     ${headers}=    User Auth Headers
@@ -125,7 +125,7 @@ Save Cart Items
 
 # ── Step 7 ────────────────────────────────────────────────────────────────────
 Mark Digitised
-    [Tags]    pharmacy    journey    regression
+    [Tags]    journey
     [Documentation]    POST /latios/digitisations/requests/mark-digitised — doctor completes
     ...    digitisation with full clinical payload.
     ${headers}=    User Auth Headers
@@ -169,7 +169,7 @@ Mark Digitised
 
 # ── Step 8 ────────────────────────────────────────────────────────────────────
 Get Pharmacy Dashboard
-    [Tags]    pharmacy    journey    smoke
+    [Tags]    journey
     [Documentation]    GET /absol/newDashboard — shows ongoing orders including the
     ...    newly digitised prescription order.
     ${headers}=    User Auth Headers
@@ -181,7 +181,7 @@ Get Pharmacy Dashboard
 
 # ── Step 9 ────────────────────────────────────────────────────────────────────
 Get Carts For Digitisation
-    [Tags]    pharmacy    journey    smoke
+    [Tags]    journey
     [Documentation]    GET /absol/carts?digitisationRequestId=&isReOrderCart=0 —
     ...    retrieves carts created for this digitisation; extracts cartId.
     ${headers}=    User Auth Headers
@@ -198,7 +198,7 @@ Get Carts For Digitisation
 
 # ── Step 10 ───────────────────────────────────────────────────────────────────
 Select Cart
-    [Tags]    pharmacy    journey    smoke
+    [Tags]    journey
     [Documentation]    GET /absol/cart/prescription/cartId/:cartId — fetches full
     ...    cart details for the selected pharmacy cart.
     ${headers}=    User Auth Headers
@@ -211,7 +211,7 @@ Select Cart
 
 # ── Step 11 ───────────────────────────────────────────────────────────────────
 Place Order
-    [Tags]    pharmacy    journey    smoke    critical
+    [Tags]    journey
     [Documentation]    GET /absol/cart/submit — initiates Cashfree payment for the
     ...    pharmacy cart; returns HTML payment/redirect page.
     ${headers}=    User Auth Headers

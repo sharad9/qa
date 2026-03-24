@@ -13,7 +13,7 @@ Suite Setup       Get User Token
 
 # ── Step 1 ────────────────────────────────────────────────────────────────────
 Upload Prescription File
-    [Tags]    lab    journey    regression
+    [Tags]    journey
     [Documentation]    POST /labs/prescriptions/file — uploads prescription image (multipart),
     ...    extracts prescriptionId from fileInfo.
     ${upload_headers}=    Create Dictionary    Authorization=${USER_TOKEN}
@@ -32,7 +32,7 @@ Upload Prescription File
 
 # ── Step 2 ────────────────────────────────────────────────────────────────────
 Get Addresses For Prescription
-    [Tags]    lab    journey    regression
+    [Tags]    journey
     [Documentation]    GET /labs-v2/address — retrieves saved delivery addresses.
     ${headers}=    User Auth Headers
     ${resp}=    GET    url=${BASE_URL}/labs-v2/address
@@ -42,7 +42,7 @@ Get Addresses For Prescription
 
 # ── Step 3 ────────────────────────────────────────────────────────────────────
 Submit Digitisation Request
-    [Tags]    lab    journey    regression
+    [Tags]    journey
     [Documentation]    POST /labs-v2/digitisation/submit-request — links prescription to address,
     ...    creates digitisation request and extracts digitisationId.
     ${headers}=    User Auth Headers
@@ -61,7 +61,7 @@ Submit Digitisation Request
 
 # ── Step 4 ────────────────────────────────────────────────────────────────────
 Mark Digitised
-    [Tags]    lab    journey    regression
+    [Tags]    journey
     [Documentation]    POST /digitisations/requests/mark-digitised — doctor completes
     ...    digitisation with full clinical payload.
     ${headers}=    User Auth Headers
@@ -105,7 +105,7 @@ Mark Digitised
 
 # ── Step 5 ────────────────────────────────────────────────────────────────────
 Get Dashboard And Extract Cart
-    [Tags]    lab    journey    regression
+    [Tags]    journey
     [Documentation]    GET /labs-v2/dashboard-v4 — finds cart created from digitisation
     ...    by filtering cards for cardType=availableCart, extracts cartId.
     ${headers}=    User Auth Headers
@@ -122,7 +122,7 @@ Get Dashboard And Extract Cart
 
 # ── Step 6 ────────────────────────────────────────────────────────────────────
 Get Addresses For Booking
-    [Tags]    lab    journey    regression
+    [Tags]    journey
     [Documentation]    GET /labs-v2/address — refresh addresses before booking flow.
     ${headers}=    User Auth Headers
     ${resp}=    GET    url=${BASE_URL}/labs-v2/address
@@ -132,7 +132,7 @@ Get Addresses For Booking
 
 # ── Step 7 ────────────────────────────────────────────────────────────────────
 Select Address On Digitisation Cart
-    [Tags]    lab    journey    regression
+    [Tags]    journey
     [Documentation]    POST /labs-v2/cart/select-address — assigns address to the digitisation cart.
     ${headers}=    User Auth Headers
     ${body}=    Create Dictionary    cartId=${JOURNEY_CART_ID}    addressId=${ADDRESS_ID}
@@ -144,7 +144,7 @@ Select Address On Digitisation Cart
 
 # ── Step 8 ────────────────────────────────────────────────────────────────────
 Get Partners For Digitisation Cart
-    [Tags]    lab    journey    regression
+    [Tags]    journey
     [Documentation]    GET /labs-v3/cart/partners/:cartId — returns available partners with meta token.
     ${headers}=    User Auth Headers
     ${params}=    Create Dictionary    lat=${USER_LATITUDE}    long=${USER_LONGITUDE}
@@ -160,7 +160,7 @@ Get Partners For Digitisation Cart
 
 # ── Step 9 ────────────────────────────────────────────────────────────────────
 Select Partner For Digitisation Cart
-    [Tags]    lab    journey    regression
+    [Tags]    journey
     [Documentation]    POST /labs-v2/cart/select-partner — selects partner using meta token.
     ${headers}=    User Auth Headers
     IF    ${JOURNEY_PARTNERS_STATUS} == 200
@@ -176,7 +176,7 @@ Select Partner For Digitisation Cart
 
 # ── Step 10 ───────────────────────────────────────────────────────────────────
 Get Slots For Digitisation Cart
-    [Tags]    lab    journey    regression
+    [Tags]    journey
     [Documentation]    GET /labs-v2/slots?cartId= — retrieves available collection slots.
     ${headers}=    User Auth Headers
     ${params}=    Create Dictionary    cartId=${JOURNEY_CART_ID}
@@ -194,7 +194,7 @@ Get Slots For Digitisation Cart
 
 # ── Step 11 ───────────────────────────────────────────────────────────────────
 Select Slot For Digitisation Cart
-    [Tags]    lab    journey    regression
+    [Tags]    journey
     [Documentation]    POST /labs-v2/cart/select-slot — assigns collection date and slot.
     ${headers}=    User Auth Headers
     ${date}=    Set Variable If    $JOURNEY_SLOT_DATE is not None    ${JOURNEY_SLOT_DATE}    2026-03-11
@@ -208,7 +208,7 @@ Select Slot For Digitisation Cart
 
 # ── Step 12 ───────────────────────────────────────────────────────────────────
 Get Patients For Digitisation Cart
-    [Tags]    lab    journey    regression
+    [Tags]    journey
     [Documentation]    GET /labs-v2/patients — returns user's patient profiles.
     ${headers}=    User Auth Headers
     ${resp}=    GET    url=${BASE_URL}/labs-v2/patients
@@ -219,7 +219,7 @@ Get Patients For Digitisation Cart
 
 # ── Step 13 ───────────────────────────────────────────────────────────────────
 Select Patient For Digitisation Cart
-    [Tags]    lab    journey    regression
+    [Tags]    journey
     [Documentation]    POST /labs-v2/cart/select-patient — assigns patient to cart.
     ${headers}=    User Auth Headers
     ${body}=    Create Dictionary    cartId=${JOURNEY_CART_ID}    patientId=${JOURNEY_PATIENT_ID}
@@ -231,7 +231,7 @@ Select Patient For Digitisation Cart
 
 # ── Step 14 ───────────────────────────────────────────────────────────────────
 View Digitisation Cart Summary
-    [Tags]    lab    journey    regression
+    [Tags]    journey
     [Documentation]    GET /labs-v3/cart/summary/:cartId — shows price, slot, address summary.
     ${headers}=    User Auth Headers
     ${resp}=    GET    url=${BASE_URL}/labs-v3/cart/summary/${JOURNEY_CART_ID}
@@ -245,7 +245,7 @@ View Digitisation Cart Summary
 
 # ── Step 15 ───────────────────────────────────────────────────────────────────
 Initiate Transaction For Digitisation Cart
-    [Tags]    lab    journey    regression    critical
+    [Tags]    journey
     [Documentation]    GET /labs-v2/transact — initiates Cashfree payment; returns HTML payment page.
     ${headers}=    User Auth Headers
     ${amount}=    Set Variable If    $JOURNEY_AMOUNT is not None    ${JOURNEY_AMOUNT}    232
