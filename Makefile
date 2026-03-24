@@ -1,4 +1,4 @@
-.PHONY: test report kiwi-up kiwi-down clean
+.PHONY: journey test report kiwi-up kiwi-down clean
 
 # Load .env if present
 ifneq (,$(wildcard .env))
@@ -9,6 +9,15 @@ endif
 # Environment: local | uat | prod  (default: uat)
 ENV ?= uat
 VARS_FILE = resources/variables/$(ENV).yaml
+
+# Run only journey tests (all domains)
+journey:
+	robot \
+	  --listener allure_robotframework:results/allure-results \
+	  --variablefile $(VARS_FILE) \
+	  --include journey \
+	  --outputdir results/robot-output \
+	  tests/
 
 # Run all tests with Allure listener (no TCMS listener required locally)
 test:
