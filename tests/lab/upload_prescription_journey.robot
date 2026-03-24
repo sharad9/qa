@@ -10,18 +10,13 @@ Variables         ../../resources/variables/default.yaml
 Suite Setup       Get User Token
 
 *** Test Cases ***
-Upload Prescription And Book Lab Journey
-    [Tags]    lab    journey    regression
-    [Documentation]
-    ...    End-to-end: upload prescription (multipart) → get addresses →
-    ...    submit digitisation request → mark digitised → dashboard (extract cartId
-    ...    from availableCart card) → select address → get/select partner →
-    ...    get/select slot → get/select patient → summary → transaction (Cashfree).
-    ...    15 steps mirroring the upload-prescription-and-book journey report.
-    ${headers}=    User Auth Headers
-    ${upload_headers}=    Create Dictionary    Authorization=${USER_TOKEN}
 
-    # ── Step 1: Upload prescription image → extract prescriptionId ────────────
+# ── Step 1 ────────────────────────────────────────────────────────────────────
+Upload Prescription File
+    [Tags]    lab    journey    regression
+    [Documentation]    POST /labs/prescriptions/file — uploads prescription image (multipart),
+    ...    extracts prescriptionId from fileInfo.
+    ${upload_headers}=    Create Dictionary    Authorization=${USER_TOKEN}
     ${file_bytes}=    Get Binary File    ${CURDIR}/test_prescription.jpg
     ${file_tuple}=    Evaluate    ('test_prescription.jpg', $file_bytes, 'image/jpeg')
     ${files}=    Create Dictionary    file=${file_tuple}
@@ -30,31 +25,49 @@ Upload Prescription And Book Lab Journey
     Log Response    ${resp}
     Should Be True    ${resp.status_code} < 500
     ...    msg=Prescription upload failed: ${resp.status_code}
-    ${prescription_id}=    Run Keyword If    ${resp.status_code} == 200
+    ${pid}=    Run Keyword If    ${resp.status_code} == 200
     ...    Set Variable    ${resp.json()}[fileInfo][prescriptionId]
     ...    ELSE    Set Variable    11446
+    Set Suite Variable    ${JOURNEY_PRESCRIPTION_ID}    ${pid}
 
-    # ── Step 2: Get addresses ─────────────────────────────────────────────────
+# ── Step 2 ────────────────────────────────────────────────────────────────────
+Get Addresses For Prescription
+    [Tags]    lab    journey    regression
+    [Documentation]    GET /labs-v2/address — retrieves saved delivery addresses.
+    ${headers}=    User Auth Headers
     ${resp}=    GET    url=${BASE_URL}/labs-v2/address
     ...    headers=${headers}    timeout=${TIMEOUT}    expected_status=any
     Log Response    ${resp}
     Verify Status Code    ${resp}    200
 
-    # ── Step 3: Submit digitisation request → extract digitisationId ──────────
-    ${body}=    Create Dictionary    prescriptionId=${prescription_id}    addressId=${ADDRESS_ID}
+# ── Step 3 ────────────────────────────────────────────────────────────────────
+Submit Digitisation Request
+    [Tags]    lab    journey    regression
+    [Documentation]    POST /labs-v2/digitisation/submit-request — links prescription to address,
+    ...    creates digitisation request and extracts digitisationId.
+    ${headers}=    User Auth Headers
+    ${body}=    Create Dictionary
+    ...    prescriptionId=${JOURNEY_PRESCRIPTION_ID}
+    ...    addressId=${ADDRESS_ID}
     ${resp}=    POST    url=${BASE_URL}/labs-v2/digitisation/submit-request
     ...    json=${body}    headers=${headers}    timeout=${TIMEOUT}    expected_status=any
     Log Response    ${resp}
     Should Be True    ${resp.status_code} < 500
     ...    msg=Submit digitisation failed: ${resp.status_code}
-    ${digitisation_id}=    Run Keyword If    ${resp.status_code} == 200
+    ${did}=    Run Keyword If    ${resp.status_code} == 200
     ...    Set Variable    ${resp.json()}[digitisationId]
     ...    ELSE    Set Variable    ${5080680}
+    Set Suite Variable    ${JOURNEY_DIGITISATION_ID}    ${did}
 
-    # ── Step 4: Mark digitised (doctor completes digitisation) ────────────────
+# ── Step 4 ────────────────────────────────────────────────────────────────────
+Mark Digitised
+    [Tags]    lab    journey    regression
+    [Documentation]    POST /digitisations/requests/mark-digitised — doctor completes
+    ...    digitisation with full clinical payload.
+    ${headers}=    User Auth Headers
     ${body}=    Evaluate    {
     ...    'action': 'complete',
-    ...    'digitisationId': $digitisation_id,
+    ...    'digitisationId': $JOURNEY_DIGITISATION_ID,
     ...    'appointmentDate': '${DIGITISATION_APPOINTMENT_DATE}',
     ...    'prescriptionValidityDate': '${DIGITISATION_PRESCRIPTION_VALIDITY_DATE}',
     ...    'doctorName': '${DIGITISATION_DOCTOR_NAME}',
@@ -90,7 +103,12 @@ Upload Prescription And Book Lab Journey
     Should Be True    ${resp.status_code} < 500
     ...    msg=Mark digitised failed: ${resp.status_code}
 
-    # ── Step 5: Dashboard → find cartId from availableCart card ──────────────
+# ── Step 5 ────────────────────────────────────────────────────────────────────
+Get Dashboard And Extract Cart
+    [Tags]    lab    journey    regression
+    [Documentation]    GET /labs-v2/dashboard-v4 — finds cart created from digitisation
+    ...    by filtering cards for cardType=availableCart, extracts cartId.
+    ${headers}=    User Auth Headers
     ${params}=    Create Dictionary    lng=${USER_LONGITUDE}    lat=${USER_LATITUDE}
     ${resp}=    GET    url=${BASE_URL}/labs-v2/dashboard-v4
     ...    headers=${headers}    params=${params}    timeout=${TIMEOUT}    expected_status=any
@@ -100,43 +118,68 @@ Upload Prescription And Book Lab Journey
     ...    [c for c in $resp.json().get('cards', []) if c.get('cardType') == 'availableCart']
     ${cart_id}=    Set Variable If    len($avail_carts) > 0
     ...    ${avail_carts[0]['cartId']}    ${CART_ID}
+    Set Suite Variable    ${JOURNEY_CART_ID}    ${cart_id}
 
-    # ── Step 6: Get addresses (refresh) ──────────────────────────────────────
+# ── Step 6 ────────────────────────────────────────────────────────────────────
+Get Addresses For Booking
+    [Tags]    lab    journey    regression
+    [Documentation]    GET /labs-v2/address — refresh addresses before booking flow.
+    ${headers}=    User Auth Headers
     ${resp}=    GET    url=${BASE_URL}/labs-v2/address
     ...    headers=${headers}    timeout=${TIMEOUT}    expected_status=any
     Log Response    ${resp}
     Verify Status Code    ${resp}    200
 
-    # ── Step 7: Select address on digitisation cart ───────────────────────────
-    ${body}=    Create Dictionary    cartId=${cart_id}    addressId=${ADDRESS_ID}
+# ── Step 7 ────────────────────────────────────────────────────────────────────
+Select Address On Digitisation Cart
+    [Tags]    lab    journey    regression
+    [Documentation]    POST /labs-v2/cart/select-address — assigns address to the digitisation cart.
+    ${headers}=    User Auth Headers
+    ${body}=    Create Dictionary    cartId=${JOURNEY_CART_ID}    addressId=${ADDRESS_ID}
     ${resp}=    POST    url=${BASE_URL}/labs-v2/cart/select-address
     ...    json=${body}    headers=${headers}    timeout=${TIMEOUT}    expected_status=any
     Log Response    ${resp}
     Should Be True    ${resp.status_code} < 500
     ...    msg=Select address failed: ${resp.status_code}
 
-    # ── Step 8: Get partners → extract meta token ─────────────────────────────
+# ── Step 8 ────────────────────────────────────────────────────────────────────
+Get Partners For Digitisation Cart
+    [Tags]    lab    journey    regression
+    [Documentation]    GET /labs-v3/cart/partners/:cartId — returns available partners with meta token.
+    ${headers}=    User Auth Headers
     ${params}=    Create Dictionary    lat=${USER_LATITUDE}    long=${USER_LONGITUDE}
-    ${resp}=    GET    url=${BASE_URL}/labs-v3/cart/partners/${cart_id}
+    ${resp}=    GET    url=${BASE_URL}/labs-v3/cart/partners/${JOURNEY_CART_ID}
     ...    headers=${headers}    params=${params}    timeout=${TIMEOUT}    expected_status=any
     Log Response    ${resp}
     Should Be True    ${resp.status_code} < 500
     ...    msg=Get partners failed: ${resp.status_code}
-    ${partner_meta}=    Run Keyword If    ${resp.status_code} == 200
+    ${meta}=    Run Keyword If    ${resp.status_code} == 200
     ...    Set Variable    ${resp.json()}[networkList][0][meta]
+    Set Suite Variable    ${JOURNEY_PARTNER_META}       ${meta}
+    Set Suite Variable    ${JOURNEY_PARTNERS_STATUS}    ${resp.status_code}
 
-    # ── Step 9: Select partner ────────────────────────────────────────────────
-    IF    ${resp.status_code} == 200
-        ${body}=    Create Dictionary    meta=${partner_meta}
+# ── Step 9 ────────────────────────────────────────────────────────────────────
+Select Partner For Digitisation Cart
+    [Tags]    lab    journey    regression
+    [Documentation]    POST /labs-v2/cart/select-partner — selects partner using meta token.
+    ${headers}=    User Auth Headers
+    IF    ${JOURNEY_PARTNERS_STATUS} == 200
+        ${body}=    Create Dictionary    meta=${JOURNEY_PARTNER_META}
         ${resp}=    POST    url=${BASE_URL}/labs-v2/cart/select-partner
         ...    json=${body}    headers=${headers}    timeout=${TIMEOUT}    expected_status=any
         Log Response    ${resp}
         Should Be True    ${resp.status_code} < 500
         ...    msg=Select partner failed: ${resp.status_code}
+    ELSE
+        Log    Partners unavailable (${JOURNEY_PARTNERS_STATUS}) — skipping
     END
 
-    # ── Step 10: Get slots ────────────────────────────────────────────────────
-    ${params}=    Create Dictionary    cartId=${cart_id}
+# ── Step 10 ───────────────────────────────────────────────────────────────────
+Get Slots For Digitisation Cart
+    [Tags]    lab    journey    regression
+    [Documentation]    GET /labs-v2/slots?cartId= — retrieves available collection slots.
+    ${headers}=    User Auth Headers
+    ${params}=    Create Dictionary    cartId=${JOURNEY_CART_ID}
     ${resp}=    GET    url=${BASE_URL}/labs-v2/slots
     ...    headers=${headers}    params=${params}    timeout=${TIMEOUT}    expected_status=any
     Log Response    ${resp}
@@ -146,46 +189,69 @@ Upload Prescription And Book Lab Journey
     ...    Set Variable    ${resp.json()}[slots][0][date]
     ${slot_id}=    Run Keyword If    ${resp.status_code} == 200
     ...    Set Variable    ${resp.json()}[slots][0][time][0][slotId]
+    Set Suite Variable    ${JOURNEY_SLOT_DATE}    ${slot_date}
+    Set Suite Variable    ${JOURNEY_SLOT_ID}      ${slot_id}
 
-    # ── Step 11: Select slot ──────────────────────────────────────────────────
-    ${date}=    Set Variable If    $slot_date is not None    ${slot_date}    2026-03-11
-    ${sid}=     Set Variable If    $slot_id is not None     ${slot_id}      ${SLOT_ID}
-    ${body}=    Create Dictionary    date=${date}    slotId=${sid}    cartId=${cart_id}
+# ── Step 11 ───────────────────────────────────────────────────────────────────
+Select Slot For Digitisation Cart
+    [Tags]    lab    journey    regression
+    [Documentation]    POST /labs-v2/cart/select-slot — assigns collection date and slot.
+    ${headers}=    User Auth Headers
+    ${date}=    Set Variable If    $JOURNEY_SLOT_DATE is not None    ${JOURNEY_SLOT_DATE}    2026-03-11
+    ${sid}=     Set Variable If    $JOURNEY_SLOT_ID is not None     ${JOURNEY_SLOT_ID}      ${SLOT_ID}
+    ${body}=    Create Dictionary    date=${date}    slotId=${sid}    cartId=${JOURNEY_CART_ID}
     ${resp}=    POST    url=${BASE_URL}/labs-v2/cart/select-slot
     ...    json=${body}    headers=${headers}    timeout=${TIMEOUT}    expected_status=any
     Log Response    ${resp}
     Should Be True    ${resp.status_code} < 500
     ...    msg=Select slot failed: ${resp.status_code}
 
-    # ── Step 12: Get patients ─────────────────────────────────────────────────
+# ── Step 12 ───────────────────────────────────────────────────────────────────
+Get Patients For Digitisation Cart
+    [Tags]    lab    journey    regression
+    [Documentation]    GET /labs-v2/patients — returns user's patient profiles.
+    ${headers}=    User Auth Headers
     ${resp}=    GET    url=${BASE_URL}/labs-v2/patients
     ...    headers=${headers}    timeout=${TIMEOUT}    expected_status=any
     Log Response    ${resp}
     Verify Status Code    ${resp}    200
-    ${patient_id}=    Set Variable    ${resp.json()}[patients][0][patientId]
+    Set Suite Variable    ${JOURNEY_PATIENT_ID}    ${resp.json()}[patients][0][patientId]
 
-    # ── Step 13: Select patient ───────────────────────────────────────────────
-    ${body}=    Create Dictionary    cartId=${cart_id}    patientId=${patient_id}
+# ── Step 13 ───────────────────────────────────────────────────────────────────
+Select Patient For Digitisation Cart
+    [Tags]    lab    journey    regression
+    [Documentation]    POST /labs-v2/cart/select-patient — assigns patient to cart.
+    ${headers}=    User Auth Headers
+    ${body}=    Create Dictionary    cartId=${JOURNEY_CART_ID}    patientId=${JOURNEY_PATIENT_ID}
     ${resp}=    POST    url=${BASE_URL}/labs-v2/cart/select-patient
     ...    json=${body}    headers=${headers}    timeout=${TIMEOUT}    expected_status=any
     Log Response    ${resp}
     Should Be True    ${resp.status_code} < 500
     ...    msg=Select patient failed: ${resp.status_code}
 
-    # ── Step 14: View cart summary → extract payable amount ───────────────────
-    ${resp}=    GET    url=${BASE_URL}/labs-v3/cart/summary/${cart_id}
+# ── Step 14 ───────────────────────────────────────────────────────────────────
+View Digitisation Cart Summary
+    [Tags]    lab    journey    regression
+    [Documentation]    GET /labs-v3/cart/summary/:cartId — shows price, slot, address summary.
+    ${headers}=    User Auth Headers
+    ${resp}=    GET    url=${BASE_URL}/labs-v3/cart/summary/${JOURNEY_CART_ID}
     ...    headers=${headers}    timeout=${TIMEOUT}    expected_status=any
     Log Response    ${resp}
     Should Be True    ${resp.status_code} in [200, 400]
     ...    msg=Summary returned unexpected status: ${resp.status_code}
     ${amount}=    Run Keyword If    ${resp.status_code} == 200
     ...    Set Variable    ${resp.json()}[cartSummary][payableAmount]
-    ${amount}=    Set Variable If    $amount is not None    ${amount}    232
+    Set Suite Variable    ${JOURNEY_AMOUNT}    ${amount}
 
-    # ── Step 15: Initiate transaction → Cashfree payment page (HTML 200) ──────
+# ── Step 15 ───────────────────────────────────────────────────────────────────
+Initiate Transaction For Digitisation Cart
+    [Tags]    lab    journey    regression    critical
+    [Documentation]    GET /labs-v2/transact — initiates Cashfree payment; returns HTML payment page.
+    ${headers}=    User Auth Headers
+    ${amount}=    Set Variable If    $JOURNEY_AMOUNT is not None    ${JOURNEY_AMOUNT}    232
     ${token}=    Set Variable    ${USER_TOKEN}
     ${resp}=    GET
-    ...    url=${BASE_URL}/labs-v2/transact?amount=${amount}&auth=${token}&cartId=${cart_id}
+    ...    url=${BASE_URL}/labs-v2/transact?amount=${amount}&auth=${token}&cartId=${JOURNEY_CART_ID}
     ...    headers=${headers}    timeout=${TIMEOUT}    expected_status=any
     Log Response    ${resp}
     Should Not Be Equal As Integers    ${resp.status_code}    0
