@@ -28,9 +28,12 @@ test-%:
 	  --outputdir results/robot-output-$* \
 	  tests/$*/
 
-# Generate Allure HTML report from latest results
+# Generate Allure HTML report — merges results from all domains
 report:
-	allure generate results/allure-results -o results/allure-report --clean
+	mkdir -p results/merged-allure-results
+	find results/ -name "*-result.json" -o -name "*-container.json" | xargs -I{} cp {} results/merged-allure-results/ 2>/dev/null; true
+	find results/ -name "*-attachment.*" | xargs -I{} cp {} results/merged-allure-results/ 2>/dev/null; true
+	allure generate results/merged-allure-results -o results/allure-report --clean
 	@echo "Report ready — serve with:"
 	@echo "  python3 -m http.server 8888 --directory results/allure-report"
 
